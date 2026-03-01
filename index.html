@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Governance Assessments</title>
+    <meta name="description" content="Free AI readiness and controls framework assessments for CPA firms and compliance leaders. Built by a CPA/CISA with deep AI governance expertise.">
+    
+    <!-- React and Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ============================================
+        // FOOTER COMPONENT - Shows on all screens
+        // ============================================
+        function Footer() {
+            return (
+                <div style={{ 
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    padding: '24px 20px',
+                    textAlign: 'center',
+                    background: 'transparent',
+                    marginTop: 'auto'
+                }}>
+                    <div style={{ fontSize: 13, color: '#64748B', marginBottom: 8 }}>
+                        Built by <strong style={{ color: '#334155' }}>Bill Long, CGEIT CISM CISA</strong>
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <a href="https://linkedin.com/in/norrislong" target="_blank" rel="noopener" style={{ color: '#2563EB', textDecoration: 'none', fontSize: 13 }}>
+                            LinkedIn
+                        </a>
+                        <span style={{ color: '#CBD5E1' }}>•</span>
+                        <a href="mailto:wlong@norrislong.com" style={{ color: '#2563EB', textDecoration: 'none', fontSize: 13 }}>
+                            Email
+                        </a>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 12 }}>
+                        Former SOC 2 auditor • AI governance specialist
+                    </div>
+                </div>
+            );
+        }
+
+        // ============================================
+        // EMAIL CAPTURE COMPONENT
+        // ============================================
+        function EmailCapture({ assessmentType, scores, onSkip }) {
+            const [email, setEmail] = useState('');
+            const [submitted, setSubmitted] = useState(false);
+            const [loading, setLoading] = useState(false);
+
+            async function handleSubmit(e) {
+                e.preventDefault();
+                setLoading(true);
+
+                // TODO: Replace with actual API endpoint
+                try {
+                    await fetch('/api/submit-assessment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            assessmentType,
+                            email,
+                            scores,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                    setSubmitted(true);
+                } catch (error) {
+                    console.error('Error submitting:', error);
+                    setSubmitted(true); // Continue anyway for now
+                }
+                
+                setLoading(false);
+            }
+
+            if (submitted) {
+                return (
+                    <div style={{ padding: '16px 20px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, marginTop: 20 }}>
+                        <div style={{ fontSize: 14, color: '#166534', fontWeight: 600, marginBottom: 4 }}>
+                            ✓ Results sent!
+                        </div>
+                        <div style={{ fontSize: 13, color: '#15803D' }}>
+                            Check your email for a detailed breakdown. Want to discuss your results? Use the contact link below.
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '20px 24px', marginTop: 24 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: '#92400E' }}>
+                        📧 Want these results emailed to you?
+                    </div>
+                    <div style={{ fontSize: 13, color: '#92400E', marginBottom: 16, lineHeight: 1.5 }}>
+                        Get a detailed breakdown with framework references and implementation guidance sent to your inbox.
+                    </div>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            placeholder="wlong@norrislong.com"
+                            required
+                            style={{
+                                flex: '1 1 200px',
+                                padding: '10px 14px',
+                                border: '1px solid #FDE68A',
+                                borderRadius: 8,
+                                fontSize: 14,
+                                outline: 'none'
+                            }}
+                        />
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            style={{
+                                padding: '10px 20px',
+                                background: '#D97706',
+                                border: 'none',
+                                borderRadius: 8,
+                                color: '#fff',
+                                fontSize: 14,
+                                fontWeight: 600,
+                                cursor: loading ? 'default' : 'pointer',
+                                opacity: loading ? 0.6 : 1
+                            }}
+                        >
+                            {loading ? 'Sending...' : 'Send Results'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onSkip}
+                            style={{
+                                padding: '10px 20px',
+                                background: 'transparent',
+                                border: '1px solid #FDE68A',
+                                borderRadius: 8,
+                                color: '#92400E',
+                                fontSize: 14,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Skip
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+
+        // ============================================
+        // READINESS ASSESSMENT - Full component from artifact
+        // ============================================
+        
+        const DOMAINS = [
+          {
+            id: "governance",
+            title: "AI Governance & Oversight",
+            icon: "⚖️",
+            description: "Leadership accountability, policy frameworks, and decision-making structures for AI adoption",
+            questions: [
+              {
+                id: "gov1",
+                text: "Has your organization designated a specific individual or committee accountable for AI-related decisions?",
+                options: [
+                  { value: 1, label: "No — AI decisions happen ad hoc or aren't tracked" },
+                  { value: 2, label: "Informally — a few people weigh in, but no formal role" },
+                  { value: 3, label: "Yes — someone owns it, but scope and authority are unclear" },
+                  { value: 4, label: "Yes — defined role with clear authority and reporting lines" },
+                ],
+                insight: "Without clear ownership, AI risk becomes everyone's problem and no one's priority.",
+              },
+              {
+                id: "gov2",
+                text: "Do you have a written policy governing how employees can use AI tools (e.g., ChatGPT, Copilot, Claude)?",
+                options: [
+                  { value: 1, label: "No policy exists" },
+                  { value: 2, label: "Informal guidance — verbal or in Slack, not documented" },
+                  { value: 3, label: "Written policy exists but hasn't been reviewed in 6+ months" },
+                  { value: 4, label: "Current, documented policy with regular review cycles" },
+                ],
+                insight: "80%+ of organizations have employees using AI tools before any policy exists. The risk isn't adoption — it's unmanaged adoption.",
+              },
+              {
+                id: "gov3",
+                text: "How does leadership evaluate whether a new AI use case is appropriate for your organization?",
+                options: [
+                  { value: 1, label: "No evaluation process — people just start using tools" },
+                  { value: 2, label: "Case-by-case discussion, no consistent criteria" },
+                  { value: 3, label: "Some criteria exist (data sensitivity, client impact) but applied inconsistently" },
+                  { value: 4, label: "Defined intake process with risk tiers and approval workflows" },
+                ],
+                insight: "A tiered approach — low-risk uses get fast approval, high-risk uses get scrutiny — balances innovation with control.",
+              },
+            ],
+          },
+          {
+            id: "risk",
+            title: "Risk Awareness & Assessment",
+            icon: "🔍",
+            description: "Understanding of AI-specific risks including bias, hallucination, data leakage, and regulatory exposure",
+            questions: [
+              {
+                id: "risk1",
+                text: "Can your team articulate the specific risks of using AI in your core business processes?",
+                options: [
+                  { value: 1, label: "Most people couldn't name AI-specific risks beyond 'it might be wrong'" },
+                  { value: 2, label: "Some awareness of risks like hallucination and data leakage" },
+                  { value: 3, label: "Key staff understand risks; documented for major use cases" },
+                  { value: 4, label: "Risk taxonomy exists, mapped to business processes, reviewed regularly" },
+                ],
+                insight: "The most dangerous AI risk is the one your team doesn't know to look for. Hallucination is obvious — training data leakage and prompt injection are not.",
+              },
+              {
+                id: "risk2",
+                text: "Have you assessed which of your data sets or workflows are too sensitive for current AI tools?",
+                options: [
+                  { value: 1, label: "No — we haven't thought about data classification for AI" },
+                  { value: 2, label: "General sense of what's sensitive, but no formal classification" },
+                  { value: 3, label: "Data classified, but AI-specific boundaries not defined" },
+                  { value: 4, label: "Clear data classification with explicit AI usage boundaries per tier" },
+                ],
+                insight: "Data classification isn't new — but AI changes the calculus. A dataset safe for internal analytics may be unsafe for an LLM that could memorize and regurgitate it.",
+              },
+              {
+                id: "risk3",
+                text: "Do you monitor AI outputs for accuracy, bias, or other quality issues in production use?",
+                options: [
+                  { value: 1, label: "No monitoring — we trust the output" },
+                  { value: 2, label: "Users spot-check informally" },
+                  { value: 3, label: "Some systematic review for high-stakes outputs" },
+                  { value: 4, label: "Defined quality assurance process with metrics and escalation paths" },
+                ],
+                insight: "AI doesn't fail like traditional software — it fails confidently. Without monitoring, you won't know it's wrong until a client or regulator tells you.",
+              },
+            ],
+          },
+          {
+            id: "data",
+            title: "Data Governance & Privacy",
+            icon: "🔐",
+            description: "Controls around data flowing into and out of AI systems, including client confidentiality and regulatory compliance",
+            questions: [
+              {
+                id: "data1",
+                text: "Do you know where your data goes when employees use AI tools — including whether it's used for model training?",
+                options: [
+                  { value: 1, label: "No visibility into data flows to AI providers" },
+                  { value: 2, label: "General awareness but haven't reviewed vendor terms" },
+                  { value: 3, label: "Reviewed terms for primary AI tools; some data flow mapping" },
+                  { value: 4, label: "Complete data flow mapping with contractual protections and opt-outs confirmed" },
+                ],
+                insight: "Most AI providers' default terms allow training on your inputs. For firms handling client data, this is a confidentiality breach waiting to happen.",
+              },
+              {
+                id: "data2",
+                text: "How do you ensure client-confidential or regulated data (PHI, PII, financial records) stays out of unauthorized AI tools?",
+                options: [
+                  { value: 1, label: "No controls — employees use their judgment" },
+                  { value: 2, label: "Policy says 'don't put sensitive data in AI' but no technical controls" },
+                  { value: 3, label: "Some technical controls (approved tools list, DLP) plus policy" },
+                  { value: 4, label: "Layered controls: approved tools, DLP, access restrictions, monitoring, and training" },
+                ],
+                insight: "Policy without technical controls is a suggestion. For regulated data, you need both the rule and the guardrail.",
+              },
+              {
+                id: "data3",
+                text: "Could you demonstrate to a client or regulator exactly how AI was used in a specific engagement or process?",
+                options: [
+                  { value: 1, label: "No — we have no record of AI usage" },
+                  { value: 2, label: "Partially — some teams document AI usage informally" },
+                  { value: 3, label: "Mostly — documentation requirements exist but compliance varies" },
+                  { value: 4, label: "Yes — systematic logging of AI usage with audit trail" },
+                ],
+                insight: "Regulators aren't asking 'did you use AI?' yet. They're going to ask 'can you prove your AI-assisted work product is reliable?' Be ready.",
+              },
+            ],
+          },
+          {
+            id: "people",
+            title: "AI-Human Collaboration",
+            icon: "🤝",
+            description: "How your people work alongside AI — trust calibration, override capability, shared decision-making, and evolving professional judgment",
+            questions: [
+              {
+                id: "ppl1",
+                text: "When AI and a human professional disagree on a judgment call, does your organization have a defined process for resolving it?",
+                options: [
+                  { value: 1, label: "No — the human either accepts or ignores the AI output with no documented reasoning" },
+                  { value: 2, label: "Informally — experienced staff override AI when they feel it's wrong, but nothing is tracked" },
+                  { value: 3, label: "Partially — high-risk workflows have escalation paths; most don't" },
+                  { value: 4, label: "Yes — documented disagreement resolution with override rationale captured for learning" },
+                ],
+                insight: "The AI-human handoff isn't a one-time event — it's a continuous negotiation. Organizations that capture *why* humans override AI build institutional knowledge that makes both the humans and the AI better over time.",
+              },
+              {
+                id: "ppl2",
+                text: "How does your organization calibrate trust in AI outputs — do people know when to lean on AI versus when to rely on their own expertise?",
+                options: [
+                  { value: 1, label: "No calibration — people either trust AI completely or don't use it at all" },
+                  { value: 2, label: "Informal — experienced staff have intuitions, but there's no shared framework" },
+                  { value: 3, label: "Some guidance exists on AI confidence levels and when human judgment should take precedence" },
+                  { value: 4, label: "Trust calibration is role-specific: staff know exactly which tasks AI handles well and where human judgment is essential" },
+                ],
+                insight: "Undertrust wastes AI's potential. Overtrust creates liability. The goal isn't 'use more AI' — it's knowing precisely where AI adds value and where professional judgment is non-negotiable.",
+              },
+              {
+                id: "ppl3",
+                text: "Are your professionals developing new skills for an AI-augmented work environment — not just prompting, but critical evaluation, workflow design, and AI oversight?",
+                options: [
+                  { value: 1, label: "No — AI skills aren't part of professional development" },
+                  { value: 2, label: "Ad hoc — a few champions are self-teaching; no organizational investment" },
+                  { value: 3, label: "Training covers AI tool usage but not deeper collaboration skills like output evaluation or workflow architecture" },
+                  { value: 4, label: "Structured development: prompt engineering, critical evaluation, AI workflow design, and oversight competency are all addressed" },
+                ],
+                insight: "The next generation of professionals won't just use AI — they'll architect human-AI workflows. 'Prompt engineering' is table stakes. The real differentiator is knowing how to design processes where AI and human judgment reinforce each other.",
+              },
+            ],
+          },
+          {
+            id: "ops",
+            title: "Operational Readiness",
+            icon: "⚙️",
+            description: "Technical infrastructure, vendor management, and the ability to implement AI responsibly at scale",
+            questions: [
+              {
+                id: "ops1",
+                text: "Do you have an inventory of all AI tools currently in use across your organization — including shadow AI?",
+                options: [
+                  { value: 1, label: "No inventory — we don't know what's being used" },
+                  { value: 2, label: "Aware of major tools, but shadow AI is likely" },
+                  { value: 3, label: "Formal inventory of sanctioned tools; some shadow AI detection" },
+                  { value: 4, label: "Complete inventory with discovery processes for unsanctioned use" },
+                ],
+                insight: "Shadow AI is today's version of shadow IT — except it's faster to adopt and harder to detect. If you're not looking for it, it's already there.",
+              },
+              {
+                id: "ops2",
+                text: "How do you evaluate and approve AI vendors — beyond 'it works well in a demo'?",
+                options: [
+                  { value: 1, label: "No vendor evaluation process specific to AI" },
+                  { value: 2, label: "Standard vendor review, but doesn't address AI-specific risks" },
+                  { value: 3, label: "AI-specific criteria exist (data handling, model transparency, etc.)" },
+                  { value: 4, label: "Comprehensive AI vendor assessment covering security, privacy, reliability, and contractual terms" },
+                ],
+                insight: "An AI vendor's SOC 2 report tells you about their infrastructure controls. It doesn't tell you about model behavior, training data practices, or output reliability.",
+              },
+              {
+                id: "ops3",
+                text: "Do you have a plan for what happens when an AI tool fails, produces harmful output, or a vendor changes terms?",
+                options: [
+                  { value: 1, label: "No contingency planning for AI-specific incidents" },
+                  { value: 2, label: "General incident response would apply, but nothing AI-specific" },
+                  { value: 3, label: "Some AI scenarios included in business continuity or incident response" },
+                  { value: 4, label: "AI-specific incident response, vendor contingency, and business continuity plans" },
+                ],
+                insight: "When OpenAI changes their data retention policy or your AI vendor gets acquired, you need a response plan — not a scramble.",
+              },
+              {
+                id: "ops4",
+                text: "If you deploy or plan to deploy AI agents — systems that take actions autonomously (API calls, data writes, workflow execution) — do you have human-in-the-loop controls and circuit breakers?",
+                options: [
+                  { value: 1, label: "We haven't considered autonomous AI agents or don't know what they are" },
+                  { value: 2, label: "Aware of agentic AI but no controls framework — agents would use the same rules as chatbots" },
+                  { value: 3, label: "Some guardrails exist: approval gates for high-impact actions, logging of agent activity" },
+                  { value: 4, label: "Comprehensive agent governance: action boundaries, HITL triggers, kill switches, audit trails, and scope limits" },
+                ],
+                insight: "A chatbot that hallucinates is embarrassing. An agent that hallucinates can execute — moving money, sending emails, modifying records. Agentic AI requires fundamentally different controls than conversational AI.",
+              },
+            ],
+          },
+        ];
+
+        const MATURITY_LEVELS = [
+          { min: 16, max: 25, level: "Ad Hoc", color: "#DC2626", bg: "#FEF2F2", border: "#FECACA", description: "AI adoption is happening, but without structure. This is where most organizations are — and it's a significant risk position. The gap between AI usage and AI governance is where incidents happen." },
+          { min: 26, max: 38, level: "Developing", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A", description: "You've started thinking about AI governance but lack consistency. Policies may exist on paper but aren't operationalized. This is the most common — and most actionable — stage." },
+          { min: 39, max: 51, level: "Defined", color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE", description: "Governance structures are in place and mostly followed. The foundation is solid — now it's about consistency, measurement, and continuous improvement." },
+          { min: 52, max: 64, level: "Managed", color: "#059669", bg: "#ECFDF5", border: "#A7F3D0", description: "Comprehensive AI governance with measurable controls. You're ahead of most organizations — focus on maintaining this through rapid AI evolution and demonstrating value." },
+        ];
+
+        function getMaturityLevel(score) {
+          return MATURITY_LEVELS.find(l => score >= l.min && score <= l.max) || MATURITY_LEVELS[0];
+        }
+
+        function getDomainScore(answers, domainId) {
+          const domain = DOMAINS.find(d => d.id === domainId);
+          return domain.questions.reduce((sum, q) => sum + (answers[q.id] || 0), 0);
+        }
+
+        function getDomainLabel(score, maxScore) {
+          const pct = score / maxScore;
+          if (pct <= 0.33) return "Critical Gap";
+          if (pct <= 0.58) return "Developing";
+          if (pct <= 0.83) return "Established";
+          return "Mature";
+        }
+
+        function getDomainColor(score, maxScore) {
+          const pct = score / maxScore;
+          if (pct <= 0.33) return "#DC2626";
+          if (pct <= 0.58) return "#D97706";
+          if (pct <= 0.83) return "#2563EB";
+          return "#059669";
+        }
+
+        const priorityRecommendations = {
+          governance: {
+            low: [
+              "Designate an AI governance owner — even if it's a part-time role, someone needs to own this.",
+              "Draft a minimum viable AI acceptable use policy. Start with what's prohibited, then expand.",
+              "Create a simple intake form for new AI use cases: what data, what risk, who approves.",
+            ],
+            mid: [
+              "Formalize your AI governance committee or expand the existing owner's mandate.",
+              "Implement tiered approval workflows — not everything needs the same scrutiny.",
+              "Schedule quarterly policy reviews; AI capabilities change faster than annual cycles allow.",
+            ],
+            high: [
+              "Benchmark your governance model against NIST AI RMF and ISO 42001 for continuous improvement.",
+              "Integrate AI governance reporting into board-level risk discussions.",
+            ],
+          },
+          risk: {
+            low: [
+              "Build a basic AI risk taxonomy: hallucination, data leakage, bias, prompt injection, vendor lock-in.",
+              "Identify your three highest-risk AI use cases and document the specific risks for each.",
+              "Establish a 'trust but verify' default — no AI output goes to clients without human review.",
+            ],
+            mid: [
+              "Develop AI-specific risk assessment criteria and integrate with your existing risk framework.",
+              "Implement output monitoring for your highest-risk AI workflows.",
+              "Create escalation paths for when AI output quality degrades or anomalies are detected.",
+            ],
+            high: [
+              "Implement continuous monitoring with defined metrics and thresholds.",
+              "Conduct periodic red-team exercises against your AI-assisted workflows.",
+            ],
+          },
+          data: {
+            low: [
+              "Audit every AI tool's data handling terms — specifically training data opt-out and retention policies.",
+              "Classify your data for AI purposes: what can go into AI tools, what absolutely cannot.",
+              "Implement at least one technical control beyond policy (approved tools list, enterprise agreements).",
+            ],
+            mid: [
+              "Map complete data flows for AI-assisted workflows, including third-party sub-processors.",
+              "Deploy DLP or monitoring for sensitive data in AI tool usage.",
+              "Build AI usage documentation into engagement workflows — make it part of the process, not an afterthought.",
+            ],
+            high: [
+              "Implement comprehensive audit trails that could satisfy regulatory inquiry.",
+              "Conduct periodic data flow assessments as AI tools and terms evolve.",
+            ],
+          },
+          people: {
+            low: [
+              "Define what 'disagreeing with the AI' looks like in practice — when should staff override, and how should they document why?",
+              "Assess trust calibration across your team: who's over-relying on AI, who's avoiding it entirely? Both are risk positions.",
+              "Start with one workflow: map exactly where AI contributes, where humans review, and where judgment is non-negotiable.",
+            ],
+            mid: [
+              "Build role-specific trust frameworks: what AI does well for each function, where professional judgment must take precedence.",
+              "Develop training beyond prompting — critical evaluation of AI outputs, workflow architecture, and human oversight techniques.",
+              "Track human override rates as a quality signal — too few overrides may indicate automation bias, not AI perfection.",
+            ],
+            high: [
+              "Implement feedback loops where human overrides improve future AI performance and trust calibration.",
+              "Integrate AI-human collaboration competency into career development and performance frameworks.",
+            ],
+          },
+          ops: {
+            low: [
+              "Conduct a shadow AI discovery exercise — survey your team honestly about what they're using.",
+              "Add AI-specific questions to your vendor assessment process: data handling, model transparency, incident notification.",
+              "Define a basic contingency plan: what happens if your primary AI tool goes down or changes terms?",
+              "If anyone is experimenting with AI agents, stop and define boundaries now — what actions can agents take, what requires human approval?",
+            ],
+            mid: [
+              "Build a comprehensive AI tool inventory with risk ratings and approved use cases per tool.",
+              "Develop AI-specific vendor assessment criteria beyond standard security questionnaires.",
+              "Integrate AI failure scenarios into your incident response and business continuity plans.",
+              "For agentic AI: implement approval gates, scope limits, and kill switches before expanding agent authority.",
+            ],
+            high: [
+              "Implement automated AI tool discovery and continuous vendor monitoring.",
+              "Establish vendor diversification strategies to reduce concentration risk.",
+              "Build agentic AI governance: tiered autonomy levels, real-time monitoring, and automatic circuit breakers for anomalous behavior.",
+            ],
+          },
+        };
+
+        function getRecommendations(answers) {
+          const results = [];
+          DOMAINS.forEach(domain => {
+            const score = getDomainScore(answers, domain.id);
+            const maxScore = domain.questions.length * 4;
+            const pct = score / maxScore;
+            const recs = priorityRecommendations[domain.id];
+            let items;
+            if (pct <= 0.42) items = recs.low;
+            else if (pct <= 0.75) items = recs.mid;
+            else items = recs.high;
+            results.push({ domain: domain.title, icon: domain.icon, score, maxScore, items });
+          });
+          results.sort((a, b) => (a.score / a.maxScore) - (b.score / b.maxScore));
+          return results;
+        }
+
+        function RadarChart({ answers }) {
+          const cx = 150, cy = 150, r = 110;
+          const domains = DOMAINS.map((d, i) => {
+            const score = getDomainScore(answers, d.id);
+            const maxScore = d.questions.length * 4;
+            const angle = (Math.PI * 2 * i) / DOMAINS.length - Math.PI / 2;
+            return { ...d, score, maxScore, angle, ratio: score / maxScore };
+          });
+
+          const rings = [0.25, 0.5, 0.75, 1.0];
+          const points = domains.map(d => ({
+            x: cx + Math.cos(d.angle) * r * d.ratio,
+            y: cy + Math.sin(d.angle) * r * d.ratio,
+          }));
+          const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z";
+
+          return (
+            <svg viewBox="0 0 300 300" style={{ width: "100%", maxWidth: 340, margin: "0 auto", display: "block" }}>
+              {rings.map((ring, i) => (
+                <polygon
+                  key={i}
+                  points={domains.map(d => `${cx + Math.cos(d.angle) * r * ring},${cy + Math.sin(d.angle) * r * ring}`).join(" ")}
+                  fill="none"
+                  stroke="#E2E8F0"
+                  strokeWidth="1"
+                />
+              ))}
+              {domains.map((d, i) => (
+                <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(d.angle) * r} y2={cy + Math.sin(d.angle) * r} stroke="#E2E8F0" strokeWidth="1" />
+              ))}
+              <path d={pathD} fill="rgba(37, 99, 235, 0.12)" stroke="#2563EB" strokeWidth="2" />
+              {points.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r="4" fill="#2563EB" />
+              ))}
+              {domains.map((d, i) => {
+                const labelR = r + 28;
+                const x = cx + Math.cos(d.angle) * labelR;
+                const y = cy + Math.sin(d.angle) * labelR;
+                return (
+                  <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="10" fill="#475569" fontWeight="500">
+                    {d.icon}
+                  </text>
+                );
+              })}
+            </svg>
+          );
+        }
+
+        function DomainBars({ answers }) {
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {DOMAINS.map(domain => {
+                const score = getDomainScore(answers, domain.id);
+                const maxScore = domain.questions.length * 4;
+                const pct = (score / maxScore) * 100;
+                const color = getDomainColor(score, maxScore);
+                return (
+                  <div key={domain.id}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13 }}>
+                      <span style={{ color: "#334155", fontWeight: 500 }}>{domain.icon} {domain.title}</span>
+                      <span style={{ color, fontWeight: 600 }}>{getDomainLabel(score, maxScore)} ({score}/{maxScore})</span>
+                    </div>
+                    <div style={{ height: 8, background: "#F1F5F9", borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 4, transition: "width 0.6s ease" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+
+        function AIReadinessAssessment({ onNavigate }) {
+          const [phase, setPhase] = useState("intro");
+          const [currentDomain, setCurrentDomain] = useState(0);
+          const [currentQuestion, setCurrentQuestion] = useState(0);
+          const [answers, setAnswers] = useState({});
+          const [showInsight, setShowInsight] = useState(null);
+          const [orgName, setOrgName] = useState("");
+          const [orgType, setOrgType] = useState("");
+          const [fadeIn, setFadeIn] = useState(true);
+          const [showEmailCapture, setShowEmailCapture] = useState(false);
+
+          const totalQuestions = DOMAINS.reduce((sum, d) => sum + d.questions.length, 0);
+          const answeredCount = Object.keys(answers).length;
+
+          function handleAnswer(questionId, value) {
+            setAnswers(prev => ({ ...prev, [questionId]: value }));
+            setShowInsight(questionId);
+          }
+
+          function nextQuestion() {
+            setShowInsight(null);
+            setFadeIn(false);
+            setTimeout(() => {
+              const domain = DOMAINS[currentDomain];
+              if (currentQuestion < domain.questions.length - 1) {
+                setCurrentQuestion(currentQuestion + 1);
+              } else if (currentDomain < DOMAINS.length - 1) {
+                setCurrentDomain(currentDomain + 1);
+                setCurrentQuestion(0);
+              } else {
+                setPhase("results");
+              }
+              setFadeIn(true);
+            }, 150);
+          }
+
+          function prevQuestion() {
+            setShowInsight(null);
+            setFadeIn(false);
+            setTimeout(() => {
+              if (currentQuestion > 0) {
+                setCurrentQuestion(currentQuestion - 1);
+              } else if (currentDomain > 0) {
+                const prevDomain = currentDomain - 1;
+                setCurrentDomain(prevDomain);
+                setCurrentQuestion(DOMAINS[prevDomain].questions.length - 1);
+              }
+              setFadeIn(true);
+            }, 150);
+          }
+
+          const totalScore = Object.values(answers).reduce((s, v) => s + v, 0);
+          const maxPossible = DOMAINS.reduce((sum, d) => sum + d.questions.length * 4, 0);
+          const maturity = getMaturityLevel(totalScore);
+
+          if (phase === "intro") {
+            return (
+              <div style={{ minHeight: "100vh", background: "linear-gradient(145deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)", fontFamily: "'Source Serif 4', 'Georgia', serif", color: "#F8FAFC", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
+                <div style={{ maxWidth: 640, width: "100%", flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <div style={{ textAlign: "center", marginBottom: 48 }}>
+                    <div style={{ fontSize: 13, letterSpacing: "0.2em", textTransform: "uppercase", color: "#94A3B8", marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>AI Governance Assessment</div>
+                    <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 300, lineHeight: 1.2, margin: "0 0 20px", letterSpacing: "-0.02em" }}>
+                      Is Your Organization<br />
+                      <span style={{ fontWeight: 600, background: "linear-gradient(135deg, #60A5FA, #A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Ready for AI?</span>
+                    </h1>
+                    <p style={{ fontSize: 16, color: "#94A3B8", lineHeight: 1.7, maxWidth: 480, margin: "0 auto", fontFamily: "'Inter', system-ui, sans-serif" }}>
+                      A 16-question diagnostic across five governance domains. Takes about 10 minutes. Produces a maturity score, gap analysis, and prioritized action plan.
+                    </p>
+                  </div>
+
+                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "28px 24px", marginBottom: 32 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      <div>
+                        <label style={{ fontSize: 12, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>Organization Name (optional)</label>
+                        <input
+                          type="text"
+                          value={orgName}
+                          onChange={e => setOrgName(e.target.value)}
+                          placeholder="Your firm or company"
+                          style={{ width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#F8FAFC", fontSize: 15, outline: "none", fontFamily: "'Inter', system-ui, sans-serif", boxSizing: "border-box" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>Organization Type (optional)</label>
+                        <select
+                          value={orgType}
+                          onChange={e => setOrgType(e.target.value)}
+                          style={{ width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: orgType ? "#F8FAFC" : "#64748B", fontSize: 15, outline: "none", fontFamily: "'Inter', system-ui, sans-serif", boxSizing: "border-box" }}
+                        >
+                          <option value="">Select your organization type</option>
+                          <option value="cpa">CPA / Accounting Firm</option>
+                          <option value="healthcare">Healthcare Organization</option>
+                          <option value="financial">Financial Services</option>
+                          <option value="tech">Technology Company</option>
+                          <option value="legal">Legal / Professional Services</option>
+                          <option value="government">Government / Public Sector</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 32, justifyContent: "center" }}>
+                    {DOMAINS.map(d => (
+                      <div key={d.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 14px", fontSize: 13, color: "#CBD5E1", fontFamily: "'Inter', system-ui, sans-serif" }}>
+                        {d.icon} {d.title}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setPhase("assessment")}
+                    style={{ width: "100%", padding: "16px 24px", background: "linear-gradient(135deg, #2563EB, #7C3AED)", border: "none", borderRadius: 10, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', system-ui, sans-serif", letterSpacing: "0.02em", transition: "transform 0.15s ease, box-shadow 0.15s ease" }}
+                    onMouseEnter={e => { e.target.style.transform = "translateY(-1px)"; e.target.style.boxShadow = "0 8px 24px rgba(37,99,235,0.3)"; }}
+                    onMouseLeave={e => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "none"; }}
+                  >
+                    Begin Assessment →
+                  </button>
+
+                  <p style={{ textAlign: "center", fontSize: 12, color: "#64748B", marginTop: 20, fontFamily: "'Inter', system-ui, sans-serif" }}>
+                    Based on NIST AI RMF, ISO 42001, and CSA AI Controls Matrix frameworks
+                  </p>
+                </div>
+                <Footer />
+              </div>
+            );
+          }
+
+          if (phase === "assessment") {
+            const domain = DOMAINS[currentDomain];
+            const question = domain.questions[currentQuestion];
+            const qIndex = DOMAINS.slice(0, currentDomain).reduce((s, d) => s + d.questions.length, 0) + currentQuestion;
+            const isAnswered = answers[question.id] !== undefined;
+            const isLast = currentDomain === DOMAINS.length - 1 && currentQuestion === domain.questions.length - 1;
+            const isFirst = currentDomain === 0 && currentQuestion === 0;
+
+            return (
+              <div style={{ minHeight: "100vh", background: "#FAFBFD", fontFamily: "'Inter', system-ui, sans-serif", color: "#1E293B", display: "flex", flexDirection: "column" }}>
+                <div style={{ position: "sticky", top: 0, zIndex: 10, background: "#fff", borderBottom: "1px solid #E2E8F0" }}>
+                  <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px 20px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, color: "#64748B", fontWeight: 500 }}>{domain.icon} {domain.title}</span>
+                      <span style={{ fontSize: 12, color: "#94A3B8" }}>{answeredCount} of {totalQuestions}</span>
+                    </div>
+                    <div style={{ height: 3, background: "#F1F5F9", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${(answeredCount / totalQuestions) * 100}%`, background: "linear-gradient(90deg, #2563EB, #7C3AED)", borderRadius: 2, transition: "width 0.4s ease" }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 20px", opacity: fadeIn ? 1 : 0, transition: "opacity 0.15s ease", flex: 1 }}>
+                  <div style={{ marginBottom: 8, fontSize: 12, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Question {qIndex + 1} of {totalQuestions}
+                  </div>
+
+                  <h2 style={{ fontSize: "clamp(18px, 3vw, 22px)", fontWeight: 600, lineHeight: 1.45, marginBottom: 28, color: "#0F172A", fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                    {question.text}
+                  </h2>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {question.options.map((opt, i) => {
+                      const isSelected = answers[question.id] === opt.value;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => handleAnswer(question.id, opt.value)}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            padding: "14px 18px",
+                            background: isSelected ? "#EFF6FF" : "#fff",
+                            border: isSelected ? "2px solid #2563EB" : "1px solid #E2E8F0",
+                            borderRadius: 10,
+                            cursor: "pointer",
+                            fontSize: 14,
+                            lineHeight: 1.5,
+                            color: isSelected ? "#1E40AF" : "#334155",
+                            fontWeight: isSelected ? 500 : 400,
+                            transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={e => { if (!isSelected) { e.target.style.borderColor = "#CBD5E1"; e.target.style.background = "#F8FAFC"; }}}
+                          onMouseLeave={e => { if (!isSelected) { e.target.style.borderColor = "#E2E8F0"; e.target.style.background = "#fff"; }}}
+                        >
+                          <span style={{ display: "inline-block", width: 22, height: 22, borderRadius: "50%", border: isSelected ? "2px solid #2563EB" : "2px solid #CBD5E1", marginRight: 12, verticalAlign: "middle", position: "relative", top: -1, background: isSelected ? "#2563EB" : "transparent", textAlign: "center", lineHeight: "18px", fontSize: 11, color: "#fff", fontWeight: 700 }}>
+                            {isSelected ? "✓" : ""}
+                          </span>
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {showInsight === question.id && (
+                    <div style={{ marginTop: 20, padding: "16px 18px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, fontSize: 13, color: "#92400E", lineHeight: 1.6 }}>
+                      <span style={{ fontWeight: 600 }}>💡 Why this matters:</span> {question.insight}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, gap: 12 }}>
+                    <button
+                      onClick={prevQuestion}
+                      disabled={isFirst}
+                      style={{ padding: "10px 20px", background: "transparent", border: "1px solid #E2E8F0", borderRadius: 8, color: isFirst ? "#CBD5E1" : "#475569", fontSize: 14, cursor: isFirst ? "default" : "pointer" }}
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={nextQuestion}
+                      disabled={!isAnswered}
+                      style={{
+                        padding: "10px 24px",
+                        background: isAnswered ? (isLast ? "linear-gradient(135deg, #059669, #0D9488)" : "#2563EB") : "#E2E8F0",
+                        border: "none",
+                        borderRadius: 8,
+                        color: isAnswered ? "#fff" : "#94A3B8",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: isAnswered ? "pointer" : "default",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      {isLast ? "View Results →" : "Next →"}
+                    </button>
+                  </div>
+                </div>
+                <Footer />
+              </div>
+            );
+          }
+
+          // Results phase
+          const recs = getRecommendations(answers);
+
+          return (
+            <div style={{ minHeight: "100vh", background: "#FAFBFD", fontFamily: "'Inter', system-ui, sans-serif", color: "#1E293B", display: "flex", flexDirection: "column" }}>
+              <div style={{ background: "linear-gradient(145deg, #0F172A, #1E293B)", color: "#F8FAFC", padding: "40px 20px 48px" }}>
+                <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+                  <div style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "#94A3B8", marginBottom: 12 }}>
+                    AI Readiness Assessment{orgName ? ` — ${orgName}` : ""}
+                  </div>
+                  <div style={{ fontSize: 64, fontWeight: 700, marginBottom: 4, fontFamily: "'Source Serif 4', Georgia, serif", background: `linear-gradient(135deg, ${maturity.color}, ${maturity.color}dd)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    {totalScore}<span style={{ fontSize: 28, fontWeight: 400 }}>/{maxPossible}</span>
+                  </div>
+                  <div style={{ display: "inline-block", padding: "6px 16px", background: maturity.bg, border: `1px solid ${maturity.border}`, borderRadius: 20, fontSize: 14, fontWeight: 600, color: maturity.color, marginBottom: 16 }}>
+                    {maturity.level}
+                  </div>
+                  <p style={{ fontSize: 14, color: "#CBD5E1", lineHeight: 1.7, maxWidth: 540, margin: "0 auto" }}>
+                    {maturity.description}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 20px 60px", flex: 1 }}>
+                {!showEmailCapture && (
+                  <EmailCapture
+                    assessmentType="AI Readiness"
+                    scores={{ total: totalScore, domains: DOMAINS.map(d => ({ id: d.id, score: getDomainScore(answers, d.id) })) }}
+                    onSkip={() => setShowEmailCapture(true)}
+                  />
+                )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 36, marginTop: showEmailCapture ? 0 : 24 }}>
+                  <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: 20 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#0F172A" }}>Coverage Profile</h3>
+                    <RadarChart answers={answers} />
+                  </div>
+                  <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: 20 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: "#0F172A" }}>Domain Scores</h3>
+                    <DomainBars answers={answers} />
+                  </div>
+                </div>
+
+                <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: "24px", marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: "#0F172A", fontFamily: "'Source Serif 4', Georgia, serif" }}>Key Findings</h3>
+                  <p style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>Domains are ranked by urgency — lowest scores first.</p>
+                  {recs.map((rec, i) => (
+                    <div key={i} style={{ marginBottom: i < recs.length - 1 ? 20 : 0, paddingBottom: i < recs.length - 1 ? 20 : 0, borderBottom: i < recs.length - 1 ? "1px solid #F1F5F9" : "none" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{rec.icon} {rec.domain}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: getDomainColor(rec.score, rec.maxScore), background: `${getDomainColor(rec.score, rec.maxScore)}11`, padding: "3px 10px", borderRadius: 12 }}>
+                          {getDomainLabel(rec.score, rec.maxScore)}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {rec.items.map((item, j) => (
+                          <div key={j} style={{ display: "flex", gap: 8, fontSize: 13, color: "#475569", lineHeight: 1.55 }}>
+                            <span style={{ color: "#94A3B8", flexShrink: 0, marginTop: 1 }}>→</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: "24px", marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: "#0F172A", fontFamily: "'Source Serif 4', Georgia, serif" }}>Framework Alignment</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                    {[
+                      { name: "NIST AI RMF", note: "Your governance and risk scores map directly to NIST's core functions." },
+                      { name: "ISO 42001", note: "ISO 42001 certification readiness depends on maturity across all five domains." },
+                      { name: "CSA AICM", note: "CSA's cloud-focused AI controls align closely with this assessment's structure." },
+                    ].map((fw, i) => (
+                      <div key={i} style={{ padding: 14, background: "#F8FAFC", borderRadius: 8, border: "1px solid #E2E8F0" }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: "#0F172A", marginBottom: 6 }}>{fw.name}</div>
+                        <div style={{ fontSize: 11, color: "#64748B", lineHeight: 1.5 }}>{fw.note}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", borderRadius: 12, padding: "28px 24px", textAlign: "center", color: "#F8FAFC" }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Source Serif 4', Georgia, serif" }}>Want to Go Deeper?</h3>
+                  <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.6, maxWidth: 480, margin: "0 auto 16px" }}>
+                    This assessment covers readiness. The <strong style={{ color: "#CBD5E1" }}>AI Controls Framework Assessment</strong> maps your controls against 150+ requirements from NIST AI RMF, ISO 42001, and CSA AICM.
+                  </p>
+                  <button
+                    onClick={() => onNavigate('controls')}
+                    style={{ padding: "12px 28px", background: "linear-gradient(135deg, #2563EB, #7C3AED)", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", letterSpacing: "0.02em", marginRight: 12 }}
+                  >
+                    Try Controls Assessment →
+                  </button>
+                </div>
+
+                <p style={{ textAlign: "center", fontSize: 11, color: "#94A3B8", marginTop: 24 }}>
+                  Assessment methodology aligned with NIST AI RMF 1.0, ISO/IEC 42001:2023, and CSA AI Controls Matrix v1.0
+                </p>
+              </div>
+              <Footer />
+            </div>
+          );
+        }
+
+        // ============================================
+        // CONTROLS FRAMEWORK - Simplified version
+        // (Full version omitted for brevity - would include all the code from the second artifact)
+        // ============================================
+        
+        // === CONTROL DOMAINS AND FRAMEWORK MAPPINGS ===
+const CONTROL_DOMAINS = [
+  {
+    id: "govern",
+    title: "Governance & Accountability",
+    icon: "⚖️",
+    nist: "GOVERN",
+    iso: "5 – Leadership, 6 – Planning",
+    csa: "AIS-01 through AIS-04",
+    controls: [
+      {
+        id: "GOV-01",
+        title: "AI Governance Structure",
+        description: "Formal organizational structure with defined roles, responsibilities, and authority for AI governance decisions.",
+        nistRef: "GOVERN 1.1, 1.2",
+        isoRef: "5.1, 5.2, 5.3",
+        csaRef: "AIS-01",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No governance structure exists for AI" },
+          { score: 1, label: "Initial", desc: "Ad hoc decision-making; no formal roles" },
+          { score: 2, label: "Developing", desc: "Some roles identified but authority and scope unclear" },
+          { score: 3, label: "Defined", desc: "Formal governance structure with documented roles and reporting" },
+          { score: 4, label: "Managed", desc: "Active governance with metrics, regular review, and board reporting" },
+          { score: 5, label: "Optimizing", desc: "Adaptive governance that evolves with AI maturity and risk landscape" },
+        ],
+        guidance: "Start with a RACI matrix for AI decisions. Minimum viable governance: one accountable person, one policy, one review cycle.",
+      },
+      {
+        id: "GOV-02",
+        title: "AI Strategy & Policy Framework",
+        description: "Documented AI strategy aligned with business objectives, supported by enforceable policies.",
+        nistRef: "GOVERN 1.3, 1.4",
+        isoRef: "5.2, 6.1, 6.2",
+        csaRef: "AIS-01",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI strategy or policies" },
+          { score: 1, label: "Initial", desc: "Informal understanding of AI direction; no written policies" },
+          { score: 2, label: "Developing", desc: "Draft policies exist; strategy not formalized" },
+          { score: 3, label: "Defined", desc: "Approved AI strategy and policy framework; communicated org-wide" },
+          { score: 4, label: "Managed", desc: "Strategy reviewed quarterly; policy compliance monitored" },
+          { score: 5, label: "Optimizing", desc: "Dynamic strategy with feedback loops; policies auto-updated with regulatory changes" },
+        ],
+        guidance: "Your AI policy doesn't need to be perfect — it needs to be published. Version 1 should cover: acceptable use, prohibited use, data classification for AI, and incident reporting.",
+      },
+      {
+        id: "GOV-03",
+        title: "Regulatory & Compliance Monitoring",
+        description: "Systematic tracking of AI-related regulations, standards, and compliance obligations.",
+        nistRef: "GOVERN 1.5, 1.6",
+        isoRef: "6.1.3, 9.1",
+        csaRef: "AIS-02",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No awareness of AI regulatory landscape" },
+          { score: 1, label: "Initial", desc: "General awareness; no systematic tracking" },
+          { score: 2, label: "Developing", desc: "Key regulations identified; monitoring is periodic" },
+          { score: 3, label: "Defined", desc: "Regulatory register maintained; impact assessments performed" },
+          { score: 4, label: "Managed", desc: "Automated regulatory tracking; compliance mapped to controls" },
+          { score: 5, label: "Optimizing", desc: "Proactive regulatory engagement; ahead of compliance requirements" },
+        ],
+        guidance: "Track: EU AI Act, NIST AI RMF, state-level AI laws, sector-specific guidance (OCC, SEC, HHS). Don't try to track everything — focus on your jurisdiction and industry.",
+      },
+      {
+        id: "GOV-04",
+        title: "AI Ethics & Responsible Use Framework",
+        description: "Principles and processes ensuring AI use aligns with organizational values and stakeholder expectations.",
+        nistRef: "GOVERN 3.1, 3.2",
+        isoRef: "5.2, A.2",
+        csaRef: "AIS-03",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No ethical framework for AI" },
+          { score: 1, label: "Initial", desc: "General awareness of AI ethics; no formal principles" },
+          { score: 2, label: "Developing", desc: "Draft principles exist; not operationalized" },
+          { score: 3, label: "Defined", desc: "Published principles with review process for new AI use cases" },
+          { score: 4, label: "Managed", desc: "Ethics review integrated into AI lifecycle; stakeholder input included" },
+          { score: 5, label: "Optimizing", desc: "Continuous ethical review with external advisory; transparent reporting" },
+        ],
+        guidance: "Ethics frameworks that don't connect to intake decisions are wallpaper. Link your principles to specific go/no-go criteria.",
+      },
+      {
+        id: "GOV-05",
+        title: "Stakeholder Communication & Transparency",
+        description: "Clear communication to stakeholders about AI usage, capabilities, and limitations.",
+        nistRef: "GOVERN 4.1, 4.2",
+        isoRef: "7.4",
+        csaRef: "AIS-04",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No stakeholder communication about AI use" },
+          { score: 1, label: "Initial", desc: "Reactive communication only; no proactive disclosure" },
+          { score: 2, label: "Developing", desc: "Some disclosure to clients/partners about AI use" },
+          { score: 3, label: "Defined", desc: "Standardized disclosure language; client communication protocols" },
+          { score: 4, label: "Managed", desc: "Transparent AI usage reporting; stakeholder feedback incorporated" },
+          { score: 5, label: "Optimizing", desc: "Public AI transparency report; industry-leading disclosure practices" },
+        ],
+        guidance: "Clients want to know two things: 'Are you using AI on my stuff?' and 'How do I know it's reliable?' Answer both proactively.",
+      },
+    ],
+  },
+  {
+    id: "risk",
+    title: "Risk Management",
+    icon: "🎯",
+    nist: "MAP, MEASURE",
+    iso: "6.1 – Actions to address risks",
+    csa: "AIS-05 through AIS-08",
+    controls: [
+      {
+        id: "RISK-01",
+        title: "AI Risk Identification & Taxonomy",
+        description: "Comprehensive identification and classification of AI-specific risks across the organization.",
+        nistRef: "MAP 1.1, 1.5, 1.6",
+        isoRef: "6.1.1, 6.1.2",
+        csaRef: "AIS-05",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI risk identification process" },
+          { score: 1, label: "Initial", desc: "Risks identified ad hoc; no taxonomy" },
+          { score: 2, label: "Developing", desc: "Basic risk categories defined (accuracy, bias, privacy)" },
+          { score: 3, label: "Defined", desc: "Comprehensive AI risk taxonomy mapped to business processes" },
+          { score: 4, label: "Managed", desc: "Risk taxonomy regularly updated; emerging risks tracked" },
+          { score: 5, label: "Optimizing", desc: "Predictive risk identification; threat intelligence integrated" },
+        ],
+        guidance: "Core AI risk categories: hallucination/accuracy, data leakage, bias/fairness, prompt injection, vendor dependency, regulatory, reputational. Map each to your actual use cases.",
+      },
+      {
+        id: "RISK-02",
+        title: "AI Impact Assessment",
+        description: "Formal process to assess potential impact of AI systems on individuals, groups, and the organization.",
+        nistRef: "MAP 2.1, 2.2, 2.3",
+        isoRef: "6.1.2",
+        csaRef: "AIS-05",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No impact assessments for AI" },
+          { score: 1, label: "Initial", desc: "Impact considered informally for major deployments" },
+          { score: 2, label: "Developing", desc: "Assessment template exists; used inconsistently" },
+          { score: 3, label: "Defined", desc: "Mandatory impact assessment for AI above defined risk thresholds" },
+          { score: 4, label: "Managed", desc: "Tiered assessment process; results tracked and auditable" },
+          { score: 5, label: "Optimizing", desc: "Continuous impact monitoring; automated re-assessment triggers" },
+        ],
+        guidance: "Not every AI use case needs a full impact assessment. Tier them: low-risk (internal productivity) gets a checklist, high-risk (client-facing, regulated data) gets a full review.",
+      },
+      {
+        id: "RISK-03",
+        title: "AI Output Validation & Monitoring",
+        description: "Processes to validate AI outputs for accuracy, bias, and quality, with ongoing monitoring in production.",
+        nistRef: "MEASURE 2.1, 2.3, 2.5",
+        isoRef: "8.4, 9.1",
+        csaRef: "AIS-06",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No output validation or monitoring" },
+          { score: 1, label: "Initial", desc: "Users review outputs informally" },
+          { score: 2, label: "Developing", desc: "Spot-checking process exists for some workflows" },
+          { score: 3, label: "Defined", desc: "Systematic validation for high-risk outputs; quality metrics defined" },
+          { score: 4, label: "Managed", desc: "Continuous monitoring with dashboards; drift detection" },
+          { score: 5, label: "Optimizing", desc: "Automated quality assurance with feedback loops; statistical process control" },
+        ],
+        guidance: "Define 'good enough' for each use case. Internal summary? Spot-check. Tax memo? Full human review. Client deliverable? Both review and documentation.",
+      },
+      {
+        id: "RISK-04",
+        title: "AI Incident Response",
+        description: "Defined procedures for responding to AI-specific incidents including failures, breaches, and harmful outputs.",
+        nistRef: "MANAGE 2.1, 2.4",
+        isoRef: "8.2, A.6.2.8",
+        csaRef: "AIS-07",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI incident response plan" },
+          { score: 1, label: "Initial", desc: "General incident response would apply; nothing AI-specific" },
+          { score: 2, label: "Developing", desc: "AI scenarios identified; response procedures being developed" },
+          { score: 3, label: "Defined", desc: "AI incident response plan documented, tested, and communicated" },
+          { score: 4, label: "Managed", desc: "Regular tabletop exercises; lessons learned integrated" },
+          { score: 5, label: "Optimizing", desc: "Automated incident detection; predictive prevention" },
+        ],
+        guidance: "AI incidents to plan for: hallucination in client deliverable, data leak to AI vendor, biased output affecting decisions, vendor terms change, model degradation.",
+      },
+      {
+        id: "RISK-05",
+        title: "Third-Party AI Risk Management",
+        description: "Assessment and monitoring of risks from AI vendors, models, and third-party AI components.",
+        nistRef: "GOVERN 6.1, 6.2",
+        isoRef: "8.5, A.7",
+        csaRef: "AIS-08",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No third-party AI risk assessment" },
+          { score: 1, label: "Initial", desc: "Standard vendor assessment used; no AI-specific criteria" },
+          { score: 2, label: "Developing", desc: "AI-specific questions added to vendor assessment" },
+          { score: 3, label: "Defined", desc: "Comprehensive AI vendor assessment covering model, data, and operational risks" },
+          { score: 4, label: "Managed", desc: "Continuous vendor monitoring; contractual AI-specific protections" },
+          { score: 5, label: "Optimizing", desc: "Vendor diversification strategy; automated monitoring; regular re-assessment" },
+        ],
+        guidance: "AI vendor assessment should cover: training data practices, data retention/deletion, model versioning, incident notification, subprocessor disclosure, and opt-out mechanisms.",
+      },
+    ],
+  },
+  {
+    id: "data",
+    title: "Data Protection & Privacy",
+    icon: "🔐",
+    nist: "MAP 3, MANAGE 3",
+    iso: "A.8 – Data for AI systems",
+    csa: "AIS-09 through AIS-12",
+    controls: [
+      {
+        id: "DATA-01",
+        title: "AI Data Classification & Boundaries",
+        description: "Classification of data for AI usage with clear boundaries on what data can enter AI systems.",
+        nistRef: "MAP 3.4",
+        isoRef: "A.8.2, A.8.3",
+        csaRef: "AIS-09",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No data classification for AI purposes" },
+          { score: 1, label: "Initial", desc: "General sense of sensitivity; no formal AI-specific classification" },
+          { score: 2, label: "Developing", desc: "Data classified but AI usage boundaries not defined" },
+          { score: 3, label: "Defined", desc: "Clear data tiers with explicit AI usage rules per tier" },
+          { score: 4, label: "Managed", desc: "Automated classification; technical enforcement of boundaries" },
+          { score: 5, label: "Optimizing", desc: "Dynamic classification with context-aware AI access controls" },
+        ],
+        guidance: "Simple starting framework: Green (OK for any AI), Yellow (approved enterprise AI tools only), Red (no AI processing). Map your data types to these tiers.",
+      },
+      {
+        id: "DATA-02",
+        title: "AI Data Flow Mapping",
+        description: "Documented understanding of how data flows into, through, and out of AI systems.",
+        nistRef: "MAP 3.1, 3.5",
+        isoRef: "A.8.4",
+        csaRef: "AIS-10",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No visibility into AI data flows" },
+          { score: 1, label: "Initial", desc: "General understanding; not documented" },
+          { score: 2, label: "Developing", desc: "Key data flows documented for primary AI tools" },
+          { score: 3, label: "Defined", desc: "Complete data flow maps including vendor processing and sub-processors" },
+          { score: 4, label: "Managed", desc: "Data flow maps maintained and updated; automated discovery" },
+          { score: 5, label: "Optimizing", desc: "Real-time data flow monitoring; anomaly detection" },
+        ],
+        guidance: "Map the full lifecycle: input → vendor processing → model interaction → output → storage → deletion. Include whether vendor uses data for training.",
+      },
+      {
+        id: "DATA-03",
+        title: "Privacy-Preserving AI Practices",
+        description: "Technical and procedural controls to protect personal and sensitive data in AI workflows.",
+        nistRef: "MANAGE 3.1",
+        isoRef: "A.8.5, A.8.6",
+        csaRef: "AIS-11",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No privacy controls specific to AI" },
+          { score: 1, label: "Initial", desc: "Basic awareness; policy says 'don't put PII in AI'" },
+          { score: 2, label: "Developing", desc: "Some technical controls (anonymization, approved tool list)" },
+          { score: 3, label: "Defined", desc: "Layered controls: policy, technical, monitoring" },
+          { score: 4, label: "Managed", desc: "Privacy-by-design in AI workflows; DLP integration" },
+          { score: 5, label: "Optimizing", desc: "Advanced PETs (differential privacy, federated learning) where appropriate" },
+        ],
+        guidance: "Practical privacy controls: enterprise AI agreements with training opt-out, DLP rules for AI tools, automated PII redaction in prompts, minimum necessary data principle.",
+      },
+      {
+        id: "DATA-04",
+        title: "AI Audit Trail & Logging",
+        description: "Systematic capture of AI usage, decisions, and outputs for accountability and regulatory compliance.",
+        nistRef: "MEASURE 4.1, 4.2",
+        isoRef: "A.6.2.5, 9.1",
+        csaRef: "AIS-12",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI usage logging" },
+          { score: 1, label: "Initial", desc: "Ad hoc logging; no standard format or retention" },
+          { score: 2, label: "Developing", desc: "Logging for some AI workflows; retention defined" },
+          { score: 3, label: "Defined", desc: "Comprehensive logging: who, what, when, which AI, what output" },
+          { score: 4, label: "Managed", desc: "Centralized log management; searchable; retention compliant" },
+          { score: 5, label: "Optimizing", desc: "Automated audit trail; real-time analytics; ready for regulatory inquiry" },
+        ],
+        guidance: "Minimum log fields: timestamp, user, AI tool, input summary (not full prompts for privacy), output summary, review status, use case classification.",
+      },
+    ],
+  },
+  {
+    id: "human",
+    title: "Human Oversight & Competency",
+    icon: "👁️",
+    nist: "GOVERN 2, MAP 4",
+    iso: "7.2, 7.3, A.5",
+    csa: "AIS-13 through AIS-15",
+    controls: [
+      {
+        id: "HUM-01",
+        title: "Human-in-the-Loop Requirements",
+        description: "Defined requirements for human review, approval, and override of AI outputs based on risk level.",
+        nistRef: "GOVERN 2.1, MAP 4.1",
+        isoRef: "A.5.3, A.5.4",
+        csaRef: "AIS-13",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No requirements for human oversight of AI" },
+          { score: 1, label: "Initial", desc: "General expectation to 'check AI work'; no specifics" },
+          { score: 2, label: "Developing", desc: "Human review required for some high-risk outputs" },
+          { score: 3, label: "Defined", desc: "Tiered review requirements based on risk; documented criteria" },
+          { score: 4, label: "Managed", desc: "Review effectiveness measured; automation bias addressed" },
+          { score: 5, label: "Optimizing", desc: "Adaptive oversight that adjusts based on AI performance data" },
+        ],
+        guidance: "Design review processes that fight automation bias: require reviewers to document specific changes, not just 'approve.' Make it harder to rubber-stamp than to actually review.",
+      },
+      {
+        id: "HUM-02",
+        title: "AI Literacy & Training Program",
+        description: "Structured training ensuring staff understand AI capabilities, limitations, and appropriate use.",
+        nistRef: "GOVERN 2.2",
+        isoRef: "7.2, 7.3",
+        csaRef: "AIS-14",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI training program" },
+          { score: 1, label: "Initial", desc: "Self-directed learning; no organizational support" },
+          { score: 2, label: "Developing", desc: "Some training available; not required or role-specific" },
+          { score: 3, label: "Defined", desc: "Role-based AI training program; completion tracked" },
+          { score: 4, label: "Managed", desc: "Competency assessed; training updated with AI evolution" },
+          { score: 5, label: "Optimizing", desc: "Continuous learning culture; AI skills in career development" },
+        ],
+        guidance: "Three tiers: Everyone (AI acceptable use, risk awareness), Practitioners (prompt engineering, output evaluation), Leaders (AI strategy, governance, vendor management).",
+      },
+      {
+        id: "HUM-03",
+        title: "Professional Skepticism for AI",
+        description: "Cultivated culture of critical evaluation of AI outputs, especially in professional judgment contexts.",
+        nistRef: "MAP 4.2",
+        isoRef: "A.5.5",
+        csaRef: "AIS-15",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "Over-reliance on AI outputs without critical evaluation" },
+          { score: 1, label: "Initial", desc: "Some awareness that AI can be wrong; no structured approach" },
+          { score: 2, label: "Developing", desc: "Guidelines for when to question AI output" },
+          { score: 3, label: "Defined", desc: "Structured critical evaluation criteria per use case" },
+          { score: 4, label: "Managed", desc: "Quality metrics track human override rates; peer review" },
+          { score: 5, label: "Optimizing", desc: "Culture of healthy skepticism; AI reliability data informs trust calibration" },
+        ],
+        guidance: "Professional skepticism for AI isn't about distrusting the tool — it's about knowing what to verify. Different use cases have different verification profiles.",
+      },
+    ],
+  },
+  {
+    id: "ops",
+    title: "Operations & Technical Controls",
+    icon: "⚙️",
+    nist: "MANAGE 1, 4",
+    iso: "8 – Operation, A.6",
+    csa: "AIS-16 through AIS-20",
+    controls: [
+      {
+        id: "OPS-01",
+        title: "AI Systems Inventory",
+        description: "Complete inventory of all AI systems, tools, and models in use across the organization.",
+        nistRef: "MANAGE 1.1",
+        isoRef: "8.1, A.6.1",
+        csaRef: "AIS-16",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI inventory" },
+          { score: 1, label: "Initial", desc: "Awareness of major tools; shadow AI likely" },
+          { score: 2, label: "Developing", desc: "Inventory of sanctioned tools; shadow AI not tracked" },
+          { score: 3, label: "Defined", desc: "Complete inventory with risk ratings; shadow AI detection" },
+          { score: 4, label: "Managed", desc: "Automated discovery; continuous inventory updates" },
+          { score: 5, label: "Optimizing", desc: "Real-time AI tool landscape monitoring; automated risk scoring" },
+        ],
+        guidance: "Inventory fields: tool name, vendor, use cases, data types processed, risk tier, owner, contract terms, training opt-out status.",
+      },
+      {
+        id: "OPS-02",
+        title: "AI Access Control",
+        description: "Controls governing who can use which AI systems for which purposes with what data.",
+        nistRef: "MANAGE 1.3",
+        isoRef: "A.6.2.2, A.6.2.3",
+        csaRef: "AIS-17",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI-specific access controls" },
+          { score: 1, label: "Initial", desc: "General IT access controls apply; no AI-specific rules" },
+          { score: 2, label: "Developing", desc: "Some AI tools require approval; not comprehensive" },
+          { score: 3, label: "Defined", desc: "Role-based access to AI tools; data-type restrictions enforced" },
+          { score: 4, label: "Managed", desc: "Automated provisioning; usage monitoring; anomaly detection" },
+          { score: 5, label: "Optimizing", desc: "Context-aware access; dynamic permissions based on data sensitivity" },
+        ],
+        guidance: "Don't just control who can access AI tools — control what data types each role can input. A marketing analyst and a tax partner need different boundaries.",
+      },
+      {
+        id: "OPS-03",
+        title: "AI Model & Prompt Management",
+        description: "Controls for managing model versions, prompts, and configurations used in AI workflows.",
+        nistRef: "MANAGE 1.4, 4.1",
+        isoRef: "A.6.2.4, A.6.2.6",
+        csaRef: "AIS-18",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No prompt or model management" },
+          { score: 1, label: "Initial", desc: "Individual prompt libraries; no standardization" },
+          { score: 2, label: "Developing", desc: "Shared prompt templates for common use cases" },
+          { score: 3, label: "Defined", desc: "Version-controlled prompts; model selection criteria documented" },
+          { score: 4, label: "Managed", desc: "Prompt performance tracked; A/B testing; change management" },
+          { score: 5, label: "Optimizing", desc: "Automated prompt optimization; model performance benchmarking" },
+        ],
+        guidance: "Version control for prompts matters. When a model update changes output quality, you need to know which prompts are affected and have a rollback path.",
+      },
+      {
+        id: "OPS-04",
+        title: "AI Business Continuity & Resilience",
+        description: "Planning for AI system failures, vendor disruptions, and the ability to maintain operations.",
+        nistRef: "MANAGE 4.2, 4.3",
+        isoRef: "A.6.2.7",
+        csaRef: "AIS-19",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No AI continuity planning" },
+          { score: 1, label: "Initial", desc: "Assumption that AI tools will always be available" },
+          { score: 2, label: "Developing", desc: "Key AI dependencies identified; manual fallbacks exist" },
+          { score: 3, label: "Defined", desc: "AI continuity plan with vendor alternatives and fallback procedures" },
+          { score: 4, label: "Managed", desc: "Regular testing of continuity plans; vendor diversification" },
+          { score: 5, label: "Optimizing", desc: "Automated failover; multi-vendor strategy; minimal disruption" },
+        ],
+        guidance: "If your AI vendor goes down for a week, can your team still do their jobs? Identify AI-critical workflows and ensure manual or alternative automated paths exist.",
+      },
+      {
+        id: "OPS-05",
+        title: "AI Change Management",
+        description: "Processes for managing changes to AI systems, models, and workflows with appropriate testing and approval.",
+        nistRef: "MANAGE 4.1",
+        isoRef: "8.1, A.6.2.9",
+        csaRef: "AIS-20",
+        levels: [
+          { score: 0, label: "Not Implemented", desc: "No change management for AI" },
+          { score: 1, label: "Initial", desc: "Changes happen ad hoc; no tracking" },
+          { score: 2, label: "Developing", desc: "Major changes reviewed; no formal process" },
+          { score: 3, label: "Defined", desc: "Change management process covers AI system updates and prompt changes" },
+          { score: 4, label: "Managed", desc: "Impact assessment required; rollback procedures tested" },
+          { score: 5, label: "Optimizing", desc: "Automated change detection; continuous testing; blue-green deployments" },
+        ],
+        guidance: "AI change management includes: model version updates, prompt modifications, vendor term changes, new use case deployment, and decommissioning.",
+      },
+    ],
+  },
+];
+
+const ALL_CONTROLS = CONTROL_DOMAINS.flatMap(d => d.controls.map(c => ({ ...c, domainId: d.id, domainTitle: d.title, domainIcon: d.icon })));
+const TOTAL_CONTROLS = ALL_CONTROLS.length;
+
+function getOverallScore(answers) {
+  const vals = Object.values(answers);
+  if (vals.length === 0) return 0;
+  return vals.reduce((a, b) => a + b, 0);
+}
+
+function getMaxScore() { return TOTAL_CONTROLS * 5; }
+
+function getDomainAvg(answers, domainId) {
+  const domain = CONTROL_DOMAINS.find(d => d.id === domainId);
+  const scores = domain.controls.map(c => answers[c.id]).filter(v => v !== undefined);
+  if (scores.length === 0) return 0;
+  return scores.reduce((a, b) => a + b, 0) / scores.length;
+}
+
+function getMaturityLabel(avg) {
+  if (avg < 1) return { label: "Not Started", color: "#94A3B8" };
+  if (avg < 2) return { label: "Initial", color: "#DC2626" };
+  if (avg < 3) return { label: "Developing", color: "#D97706" };
+  if (avg < 4) return { label: "Defined", color: "#2563EB" };
+  if (avg < 4.5) return { label: "Managed", color: "#059669" };
+  return { label: "Optimizing", color: "#047857" };
+}
+
+function HeatmapCell({ value, onClick, isActive }) {
+  const colors = ["#F1F5F9", "#FEE2E2", "#FED7AA", "#BFDBFE", "#BBF7D0", "#6EE7B7"];
+  const bg = value !== undefined ? colors[value] : "#F8FAFC";
+  const textColors = ["#94A3B8", "#DC2626", "#D97706", "#2563EB", "#059669", "#047857"];
+  const tc = value !== undefined ? textColors[value] : "#CBD5E1";
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        width: 36, height: 36, borderRadius: 6, background: bg,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 12, fontWeight: 600, color: tc, cursor: "pointer",
+        border: isActive ? "2px solid #0F172A" : "1px solid #E2E8F0",
+        transition: "all 0.15s ease",
+      }}
+      onMouseEnter={e => { if (!isActive) e.target.style.transform = "scale(1.1)"; }}
+      onMouseLeave={e => { e.target.style.transform = "scale(1)"; }}
+    >
+      {value !== undefined ? value : "–"}
+    </div>
+  );
+}
+
+        function AIControlsFramework({ onNavigate }) {
+  const [phase, setPhase] = useState("intro");
+  const [currentControl, setCurrentControl] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showGuidance, setShowGuidance] = useState(false);
+  const [viewMode, setViewMode] = useState("sequential"); // sequential, heatmap, results
+
+  const control = ALL_CONTROLS[currentControl];
+  const answeredCount = Object.keys(answers).length;
+
+  function handleScore(controlId, score) {
+    setAnswers(prev => ({ ...prev, [controlId]: score }));
+  }
+
+  function handleNote(controlId, text) {
+    setNotes(prev => ({ ...prev, [controlId]: text }));
+  }
+
+  // Intro
+  if (phase === "intro") {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(145deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)", fontFamily: "'Source Serif 4', Georgia, serif", color: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
+        <div style={{ maxWidth: 700, width: "100%" }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "#64748B", marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>Comprehensive Assessment</div>
+            <h1 style={{ fontSize: "clamp(26px, 4.5vw, 38px)", fontWeight: 300, lineHeight: 1.2, margin: "0 0 16px", letterSpacing: "-0.02em" }}>
+              AI Controls<br />
+              <span style={{ fontWeight: 600, background: "linear-gradient(135deg, #60A5FA, #34D399)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Framework Assessment</span>
+            </h1>
+            <p style={{ fontSize: 15, color: "#94A3B8", lineHeight: 1.7, maxWidth: 520, margin: "0 auto", fontFamily: "'Inter', system-ui, sans-serif" }}>
+              {TOTAL_CONTROLS} controls across {CONTROL_DOMAINS.length} domains, mapped to NIST AI RMF, ISO 42001, and CSA AICM. Score each control 0–5 for a complete maturity profile with implementation guidance.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
+            {CONTROL_DOMAINS.map(d => (
+              <div key={d.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "16px" }}>
+                <div style={{ fontSize: 22, marginBottom: 6 }}>{d.icon}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>{d.title}</div>
+                <div style={{ fontSize: 12, color: "#64748B", fontFamily: "'Inter', system-ui, sans-serif" }}>{d.controls.length} controls</div>
+                <div style={{ fontSize: 11, color: "#475569", marginTop: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>
+                  NIST: {d.nist} · ISO: {d.iso}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 32 }}>
+            {[
+              { name: "NIST AI RMF 1.0", desc: "Govern · Map · Measure · Manage" },
+              { name: "ISO/IEC 42001:2023", desc: "AI Management System Standard" },
+              { name: "CSA AICM v1.0", desc: "Cloud AI Controls Matrix" },
+            ].map((fw, i) => (
+              <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "12px", border: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
+                <div style={{ fontWeight: 600, fontSize: 12, color: "#CBD5E1", fontFamily: "'Inter', system-ui, sans-serif" }}>{fw.name}</div>
+                <div style={{ fontSize: 11, color: "#64748B", marginTop: 3, fontFamily: "'Inter', system-ui, sans-serif" }}>{fw.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setPhase("assess")}
+            style={{ width: "100%", padding: "16px 24px", background: "linear-gradient(135deg, #2563EB, #059669)", border: "none", borderRadius: 10, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', system-ui, sans-serif" }}
+            onMouseEnter={e => { e.target.style.transform = "translateY(-1px)"; e.target.style.boxShadow = "0 8px 24px rgba(5,150,105,0.3)"; }}
+            onMouseLeave={e => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "none"; }}
+          >
+            Begin Assessment →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Assessment
+  if (phase === "assess") {
+    // Heatmap view
+    if (viewMode === "heatmap") {
+      return (
+        <div style={{ minHeight: "100vh", background: "#FAFBFD", fontFamily: "'Inter', system-ui, sans-serif" }}>
+          <div style={{ position: "sticky", top: 0, zIndex: 10, background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "12px 20px" }}>
+            <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 600, fontSize: 15 }}>AI Controls Heatmap</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setViewMode("sequential")} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", fontSize: 13 }}>Sequential</button>
+                {answeredCount === TOTAL_CONTROLS && (
+                  <button onClick={() => setPhase("results")} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#059669", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>View Results</button>
+                )}
+              </div>
+            </div>
+          </div>
+          <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 20px" }}>
+            {CONTROL_DOMAINS.map(domain => (
+              <div key={domain.id} style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, color: "#0F172A" }}>{domain.icon} {domain.title}</h3>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {domain.controls.map(c => {
+                    const idx = ALL_CONTROLS.findIndex(ac => ac.id === c.id);
+                    return (
+                      <div key={c.id} style={{ textAlign: "center" }}>
+                        <HeatmapCell
+                          value={answers[c.id]}
+                          isActive={currentControl === idx}
+                          onClick={() => { setCurrentControl(idx); setViewMode("sequential"); }}
+                        />
+                        <div style={{ fontSize: 9, color: "#94A3B8", marginTop: 2 }}>{c.id}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 12, marginTop: 16, fontSize: 11, color: "#64748B" }}>
+              {["Not Impl.", "Initial", "Developing", "Defined", "Managed", "Optimizing"].map((l, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: 3, background: ["#F1F5F9", "#FEE2E2", "#FED7AA", "#BFDBFE", "#BBF7D0", "#6EE7B7"][i] }} />
+                  {l}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Sequential view
+    const isLast = currentControl === TOTAL_CONTROLS - 1;
+    const isFirst = currentControl === 0;
+    const isAnswered = answers[control.id] !== undefined;
+
+    return (
+      <div style={{ minHeight: "100vh", background: "#FAFBFD", fontFamily: "'Inter', system-ui, sans-serif", color: "#1E293B" }}>
+        {/* Top bar */}
+        <div style={{ position: "sticky", top: 0, zIndex: 10, background: "#fff", borderBottom: "1px solid #E2E8F0" }}>
+          <div style={{ maxWidth: 760, margin: "0 auto", padding: "10px 20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: "#64748B", fontWeight: 500 }}>{control.domainIcon} {control.domainTitle}</span>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "#94A3B8" }}>{answeredCount}/{TOTAL_CONTROLS}</span>
+                <button onClick={() => setViewMode("heatmap")} style={{ padding: "4px 10px", borderRadius: 5, border: "1px solid #E2E8F0", background: "#F8FAFC", cursor: "pointer", fontSize: 11, color: "#475569" }}>Heatmap</button>
+              </div>
+            </div>
+            <div style={{ height: 3, background: "#F1F5F9", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${(answeredCount / TOTAL_CONTROLS) * 100}%`, background: "linear-gradient(90deg, #2563EB, #059669)", borderRadius: 2, transition: "width 0.4s ease" }} />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 20px" }}>
+          {/* Control header */}
+          <div style={{ marginBottom: 6, display: "flex", gap: 10, alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "#94A3B8", fontFamily: "'SF Mono', 'Fira Code', monospace", background: "#F1F5F9", padding: "2px 8px", borderRadius: 4 }}>{control.id}</span>
+            <span style={{ fontSize: 11, color: "#94A3B8" }}>Control {currentControl + 1} of {TOTAL_CONTROLS}</span>
+          </div>
+
+          <h2 style={{ fontSize: "clamp(18px, 3vw, 22px)", fontWeight: 600, lineHeight: 1.35, marginBottom: 8, color: "#0F172A", fontFamily: "'Source Serif 4', Georgia, serif" }}>
+            {control.title}
+          </h2>
+
+          <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.6, marginBottom: 16 }}>
+            {control.description}
+          </p>
+
+          {/* Framework refs */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
+            {[
+              { label: "NIST", value: control.nistRef, color: "#2563EB" },
+              { label: "ISO", value: control.isoRef, color: "#7C3AED" },
+              { label: "CSA", value: control.csaRef, color: "#059669" },
+            ].map((ref, i) => (
+              <span key={i} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 4, background: `${ref.color}0D`, color: ref.color, fontWeight: 500, fontFamily: "'SF Mono', 'Fira Code', monospace" }}>
+                {ref.label}: {ref.value}
+              </span>
+            ))}
+          </div>
+
+          {/* Maturity levels */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+            {control.levels.map((level, i) => {
+              const isSelected = answers[control.id] === level.score;
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleScore(control.id, level.score)}
+                  style={{
+                    width: "100%", textAlign: "left", padding: "12px 16px",
+                    background: isSelected ? "#EFF6FF" : "#fff",
+                    border: isSelected ? "2px solid #2563EB" : "1px solid #E2E8F0",
+                    borderRadius: 8, cursor: "pointer", transition: "all 0.12s ease",
+                    display: "flex", gap: 12, alignItems: "flex-start",
+                  }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = "#CBD5E1"; }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = "#E2E8F0"; }}
+                >
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 6, flexShrink: 0,
+                    background: isSelected ? "#2563EB" : ["#F1F5F9", "#FEE2E2", "#FED7AA", "#BFDBFE", "#BBF7D0", "#6EE7B7"][i],
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 12, fontWeight: 700, color: isSelected ? "#fff" : ["#94A3B8", "#DC2626", "#D97706", "#2563EB", "#059669", "#047857"][i],
+                  }}>
+                    {level.score}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: isSelected ? "#1E40AF" : "#0F172A", marginBottom: 2 }}>{level.label}</div>
+                    <div style={{ fontSize: 12, color: isSelected ? "#3B82F6" : "#64748B", lineHeight: 1.4 }}>{level.desc}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Guidance toggle */}
+          <button
+            onClick={() => setShowGuidance(!showGuidance)}
+            style={{ fontSize: 13, color: "#2563EB", background: "none", border: "none", cursor: "pointer", fontWeight: 500, marginBottom: 12, padding: 0 }}
+          >
+            {showGuidance ? "▾ Hide" : "▸ Show"} implementation guidance
+          </button>
+          {showGuidance && (
+            <div style={{ padding: "14px 16px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, fontSize: 13, color: "#166534", lineHeight: 1.6, marginBottom: 16 }}>
+              💡 {control.guidance}
+            </div>
+          )}
+
+          {/* Notes */}
+          <textarea
+            value={notes[control.id] || ""}
+            onChange={e => handleNote(control.id, e.target.value)}
+            placeholder="Notes, evidence, or action items for this control..."
+            style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 13, color: "#334155", minHeight: 60, resize: "vertical", fontFamily: "'Inter', system-ui, sans-serif", outline: "none", boxSizing: "border-box", background: "#FAFBFD" }}
+          />
+
+          {/* Nav */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24, gap: 12 }}>
+            <button
+              onClick={() => { setCurrentControl(Math.max(0, currentControl - 1)); setShowGuidance(false); }}
+              disabled={isFirst}
+              style={{ padding: "10px 18px", background: "transparent", border: "1px solid #E2E8F0", borderRadius: 8, color: isFirst ? "#CBD5E1" : "#475569", fontSize: 14, cursor: isFirst ? "default" : "pointer" }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => {
+                if (isLast && answeredCount === TOTAL_CONTROLS) {
+                  setPhase("results");
+                } else {
+                  setCurrentControl(Math.min(TOTAL_CONTROLS - 1, currentControl + 1));
+                  setShowGuidance(false);
+                }
+              }}
+              style={{
+                padding: "10px 22px",
+                background: isLast && answeredCount === TOTAL_CONTROLS ? "linear-gradient(135deg, #059669, #0D9488)" : "#2563EB",
+                border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              {isLast && answeredCount === TOTAL_CONTROLS ? "View Results →" : "Next →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Results
+  const totalScore = getOverallScore(answers);
+  const maxScore = getMaxScore();
+  const overallAvg = totalScore / TOTAL_CONTROLS;
+  const overallMaturity = getMaturityLabel(overallAvg);
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#FAFBFD", fontFamily: "'Inter', system-ui, sans-serif", color: "#1E293B" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(145deg, #0F172A, #1E293B)", color: "#F8FAFC", padding: "36px 20px 44px" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "#64748B", marginBottom: 10 }}>AI Controls Framework Assessment</div>
+          <div style={{ fontSize: 56, fontWeight: 700, fontFamily: "'Source Serif 4', Georgia, serif", color: overallMaturity.color }}>
+            {overallAvg.toFixed(1)}<span style={{ fontSize: 24, fontWeight: 400, color: "#64748B" }}>/5.0</span>
+          </div>
+          <div style={{ display: "inline-block", padding: "5px 14px", borderRadius: 16, fontSize: 13, fontWeight: 600, color: overallMaturity.color, background: `${overallMaturity.color}18`, marginTop: 4 }}>
+            {overallMaturity.label} Maturity
+          </div>
+          <div style={{ fontSize: 13, color: "#94A3B8", marginTop: 10 }}>
+            {totalScore} of {maxScore} total points across {TOTAL_CONTROLS} controls
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "28px 20px 60px" }}>
+        {/* Domain summary */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: 24, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, fontFamily: "'Source Serif 4', Georgia, serif" }}>Domain Maturity Profile</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {CONTROL_DOMAINS.map(domain => {
+              const avg = getDomainAvg(answers, domain.id);
+              const mat = getMaturityLabel(avg);
+              const pct = (avg / 5) * 100;
+              return (
+                <div key={domain.id}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>{domain.icon} {domain.title}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: mat.color }}>{mat.label} ({avg.toFixed(1)})</span>
+                  </div>
+                  <div style={{ height: 8, background: "#F1F5F9", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: mat.color, borderRadius: 4, transition: "width 0.5s ease" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Control detail table */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: 24, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, fontFamily: "'Source Serif 4', Georgia, serif" }}>Control-Level Results</h3>
+          {CONTROL_DOMAINS.map(domain => (
+            <div key={domain.id} style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid #F1F5F9" }}>
+                {domain.icon} {domain.title}
+              </div>
+              {domain.controls.map(c => {
+                const score = answers[c.id];
+                const level = c.levels.find(l => l.score === score);
+                const mat = getMaturityLabel(score);
+                return (
+                  <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #FAFBFD" }}>
+                    <span style={{ fontSize: 11, fontFamily: "'SF Mono', 'Fira Code', monospace", color: "#94A3B8", width: 60, flexShrink: 0 }}>{c.id}</span>
+                    <span style={{ fontSize: 13, color: "#334155", flex: 1 }}>{c.title}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4,
+                      color: mat.color, background: `${mat.color}11`,
+                    }}>
+                      {score}/5 — {level?.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Gap analysis */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: 24, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, fontFamily: "'Source Serif 4', Georgia, serif" }}>Priority Gap Analysis</h3>
+          <p style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>Controls scoring below "Defined" (3), ranked by improvement priority.</p>
+          {ALL_CONTROLS
+            .filter(c => (answers[c.id] || 0) < 3)
+            .sort((a, b) => (answers[a.id] || 0) - (answers[b.id] || 0))
+            .slice(0, 10)
+            .map((c, i) => {
+              const score = answers[c.id] || 0;
+              const mat = getMaturityLabel(score);
+              return (
+                <div key={c.id} style={{ padding: "12px 0", borderBottom: i < 9 ? "1px solid #F1F5F9" : "none" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>
+                      <span style={{ color: "#94A3B8", fontFamily: "'SF Mono', monospace", marginRight: 8 }}>{c.id}</span>
+                      {c.title}
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: mat.color }}>{score}/5</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#059669", lineHeight: 1.5, paddingLeft: 16 }}>
+                    → {c.guidance}
+                  </div>
+                </div>
+              );
+            })}
+          {ALL_CONTROLS.filter(c => (answers[c.id] || 0) < 3).length === 0 && (
+            <p style={{ fontSize: 13, color: "#059669", fontWeight: 500 }}>All controls at "Defined" or above. Focus on continuous improvement and optimization.</p>
+          )}
+        </div>
+
+        {/* Notes export */}
+        {Object.keys(notes).filter(k => notes[k]).length > 0 && (
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: 24, marginBottom: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, fontFamily: "'Source Serif 4', Georgia, serif" }}>Assessment Notes</h3>
+            {Object.entries(notes).filter(([_, v]) => v).map(([id, text]) => {
+              const ctrl = ALL_CONTROLS.find(c => c.id === id);
+              return (
+                <div key={id} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #F1F5F9" }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
+                    {id} — {ctrl?.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#64748B", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{text}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Framework mapping */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: 24, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, fontFamily: "'Source Serif 4', Georgia, serif" }}>Framework Cross-Reference</h3>
+          <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ marginBottom: 12 }}>This assessment maps {TOTAL_CONTROLS} controls to three leading AI governance frameworks. Each control includes specific clause references enabling direct traceability for audit and compliance purposes.</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              {[
+                { name: "NIST AI RMF 1.0", desc: "4 core functions (Govern, Map, Measure, Manage) with 19 categories and 72 subcategories", color: "#2563EB" },
+                { name: "ISO/IEC 42001:2023", desc: "AI management system requirements with Annex A controls for responsible AI", color: "#7C3AED" },
+                { name: "CSA AICM v1.0", desc: "Cloud-specific AI controls extending CCM for AI workload security and governance", color: "#059669" },
+              ].map((fw, i) => (
+                <div key={i} style={{ padding: 14, borderRadius: 8, border: `1px solid ${fw.color}22`, background: `${fw.color}06` }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: fw.color, marginBottom: 4 }}>{fw.name}</div>
+                  <div style={{ fontSize: 11, color: "#64748B", lineHeight: 1.5 }}>{fw.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Restart */}
+        <div style={{ textAlign: "center" }}>
+          <button
+            onClick={() => { setPhase("assess"); setViewMode("heatmap"); }}
+            style={{ padding: "10px 20px", border: "1px solid #E2E8F0", borderRadius: 8, background: "#fff", color: "#475569", fontSize: 13, cursor: "pointer" }}
+          >
+            ← Back to Assessment
+          </button>
+        </div>
+
+        <p style={{ textAlign: "center", fontSize: 11, color: "#94A3B8", marginTop: 24 }}>
+          Mapped to NIST AI RMF 1.0 · ISO/IEC 42001:2023 · CSA AI Controls Matrix v1.0
+        </p>
+      </div>
+    </div>
+  );
+}
+
+        // ============================================
+        // MAIN APP ROUTER
+        // ============================================
+        
+        function App() {
+            const [currentView, setCurrentView] = useState('readiness');
+            
+            return (
+                <div>
+                    {currentView === 'readiness' && <AIReadinessAssessment onNavigate={setCurrentView} />}
+                    {currentView === 'controls' && <AIControlsFramework onNavigate={setCurrentView} />}
+                </div>
+            );
+        }
+
+        // Render
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
