@@ -1788,20 +1788,21 @@ function HeatmapCell({ value, onClick, isActive }) {
             </button>
             <button
               onClick={() => {
-                if (isLast && answeredCount === TOTAL_CONTROLS) {
+                if (isLast && isAnswered) {
                   setPhase("results");
-                } else {
-                  setCurrentControl(Math.min(TOTAL_CONTROLS - 1, currentControl + 1));
+                } else if (!isLast) {
+                  setCurrentControl(currentControl + 1);
                   setShowGuidance(false);
                 }
               }}
+              disabled={!isAnswered}
               style={{
                 padding: "10px 22px",
-                background: isLast && answeredCount === TOTAL_CONTROLS ? "linear-gradient(135deg, #059669, #0D9488)" : "#2563EB",
-                border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer",
+                background: !isAnswered ? "#E2E8F0" : isLast ? "linear-gradient(135deg, #059669, #0D9488)" : "#2563EB",
+                border: "none", borderRadius: 8, color: !isAnswered ? "#94A3B8" : "#fff", fontSize: 14, fontWeight: 600, cursor: !isAnswered ? "default" : "pointer",
               }}
             >
-              {isLast && answeredCount === TOTAL_CONTROLS ? "View Results →" : "Next →"}
+              {isLast && isAnswered ? "View Results →" : "Next →"}
             </button>
           </div>
         </div>
