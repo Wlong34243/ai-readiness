@@ -220,7 +220,7 @@
             return (
               <div style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", borderRadius: 12, padding: "28px 24px", textAlign: "center", color: "#F8FAFC", marginBottom: 24 }}>
                 <div style={{ fontSize: 18, fontWeight: 600, fontFamily: "'Source Serif 4', Georgia, serif" }}>
-                  Thanks — I'll be in touch.
+                  Got it. I'll review your results and be in touch within a business day.
                 </div>
               </div>
             );
@@ -228,9 +228,9 @@
 
           return (
             <div style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", borderRadius: 12, padding: "28px 24px", color: "#F8FAFC", marginBottom: 24 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Source Serif 4', Georgia, serif" }}>Want the Full Picture?</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Source Serif 4', Georgia, serif" }}>These Results Are a Starting Point</h3>
               <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.6, marginBottom: 20 }}>
-                Share your details and Bill will follow up with personalized guidance based on your results.
+                Your score shows where your program stands across five domains. The harder question is sequencing — which gaps carry the most risk, what remediation looks like for your org type, and where framework requirements create the most exposure. Share your details for a focused 30-minute review. No pitch — just the analysis.
               </p>
               <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -275,7 +275,7 @@
                     style={{ marginTop: 2, accentColor: "#2563EB", width: 16, height: 16, flexShrink: 0 }}
                   />
                   <span style={{ fontSize: 13, color: "#CBD5E1", lineHeight: 1.5 }}>
-                    Bill Norris may contact me about my results.
+                    I'm open to a follow-up conversation about my results.
                   </span>
                 </label>
                 <button
@@ -1041,15 +1041,15 @@
                 />
 
                 <div style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", borderRadius: 12, padding: "28px 24px", textAlign: "center", color: "#F8FAFC" }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Source Serif 4', Georgia, serif" }}>Want to Go Deeper?</h3>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Source Serif 4', Georgia, serif" }}>Ready for the Control-Level View?</h3>
                   <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.6, maxWidth: 480, margin: "0 auto 16px" }}>
-                    This assessment covers readiness. The <strong style={{ color: "#CBD5E1" }}>AI Controls Framework Assessment</strong> maps your controls against 150+ requirements from NIST AI RMF, ISO 42001, and CSA AICM.
+                    This assessment scored your program maturity. The <strong style={{ color: "#CBD5E1" }}>AI Controls Framework Assessment</strong> goes a level deeper — 23 controls evaluated individually, each mapped to specific clauses in NIST AI RMF, ISO 42001, and CSA AICM. The output is a control gap register you can bring to leadership or use to scope remediation work.
                   </p>
                   <button
                     onClick={() => onNavigate('controls')}
                     style={{ padding: "12px 28px", background: "linear-gradient(135deg, #2563EB, #7C3AED)", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", letterSpacing: "0.02em", marginRight: 12 }}
                   >
-                    Try Controls Assessment →
+                    Start Controls Assessment →
                   </button>
                 </div>
 
