@@ -167,6 +167,130 @@
         }
 
         // ============================================
+        // READINESS EMAIL CAPTURE - EmailJS notification form
+        // ============================================
+        function ReadinessEmailCapture({ orgName: initialOrgName, orgType, maturity, totalScore, maxPossible, answers }) {
+          const [firstName, setFirstName] = useState('');
+          const [email, setEmail] = useState('');
+          const [org, setOrg] = useState(initialOrgName || '');
+          const [canContact, setCanContact] = useState(false);
+          const [submitted, setSubmitted] = useState(false);
+          const [loading, setLoading] = useState(false);
+
+          useEffect(() => {
+            if (document.getElementById('emailjs-sdk')) return;
+            const script = document.createElement('script');
+            script.id = 'emailjs-sdk';
+            script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+            script.onload = () => {
+              window.emailjs.init('MfRZ8VHhIQ-X84soy');
+            };
+            document.head.appendChild(script);
+          }, []);
+
+          async function handleSubmit(e) {
+            e.preventDefault();
+            setLoading(true);
+
+            const domainScores = DOMAINS.map(d => {
+              const score = getDomainScore(answers, d.id);
+              const maxScore = d.questions.length * 4;
+              return `${d.title}: ${score}/${maxScore} (${getDomainLabel(score, maxScore)})`;
+            }).join('\n');
+
+            try {
+              await window.emailjs.send('service_bkzovo6', 'template_fl8m5he', {
+                from_name: firstName,
+                from_email: email,
+                org_name: org,
+                org_type: orgType,
+                maturity_level: maturity.level,
+                total_score: `${totalScore}/${maxPossible}`,
+                domain_scores: domainScores,
+              });
+            } catch (err) {
+              // Fail silently
+            }
+
+            setSubmitted(true);
+            setLoading(false);
+          }
+
+          if (submitted) {
+            return (
+              <div style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", borderRadius: 12, padding: "28px 24px", textAlign: "center", color: "#F8FAFC", marginBottom: 24 }}>
+                <div style={{ fontSize: 18, fontWeight: 600, fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                  Thanks — I'll be in touch.
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", borderRadius: 12, padding: "28px 24px", color: "#F8FAFC", marginBottom: 24 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Source Serif 4', Georgia, serif" }}>Want the Full Picture?</h3>
+              <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.6, marginBottom: 20 }}>
+                Share your details and Bill will follow up with personalized guidance based on your results.
+              </p>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#94A3B8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>First Name</label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
+                      placeholder="Jane"
+                      required
+                      style={{ width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 8, color: "#F8FAFC", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#94A3B8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="jane@firm.com"
+                      required
+                      style={{ width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 8, color: "#F8FAFC", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, color: "#94A3B8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>Organization</label>
+                  <input
+                    type="text"
+                    value={org}
+                    onChange={e => setOrg(e.target.value)}
+                    placeholder="Your firm or company"
+                    style={{ width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 8, color: "#F8FAFC", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={canContact}
+                    onChange={e => setCanContact(e.target.checked)}
+                    style={{ marginTop: 2, accentColor: "#2563EB", width: 16, height: 16, flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 13, color: "#CBD5E1", lineHeight: 1.5 }}>
+                    Bill Norris may contact me about my results.
+                  </span>
+                </label>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{ padding: "12px 28px", background: "linear-gradient(135deg, #2563EB, #7C3AED)", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 600, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1, letterSpacing: "0.02em", alignSelf: "flex-start" }}
+                >
+                  {loading ? "Sending..." : "Send My Results \u2192"}
+                </button>
+              </form>
+            </div>
+          );
+        }
+
+        // ============================================
         // READINESS ASSESSMENT - Full component from artifact
         // ============================================
         
@@ -906,6 +1030,15 @@
                     ))}
                   </div>
                 </div>
+
+                <ReadinessEmailCapture
+                  orgName={orgName}
+                  orgType={orgType}
+                  maturity={maturity}
+                  totalScore={totalScore}
+                  maxPossible={maxPossible}
+                  answers={answers}
+                />
 
                 <div style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", borderRadius: 12, padding: "28px 24px", textAlign: "center", color: "#F8FAFC" }}>
                   <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Source Serif 4', Georgia, serif" }}>Want to Go Deeper?</h3>
